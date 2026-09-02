@@ -1,0 +1,84 @@
+import './bootstrap';
+
+document.addEventListener('DOMContentLoaded', () => {
+    const navToggle = document.getElementById('navToggle');
+    const navLinks = document.getElementById('navLinks');
+    const form = document.getElementById('projectForm');
+    const formStatus = document.getElementById('formStatus');
+    const submitBtn = document.getElementById('submitBtn');
+    const typeSelect = document.getElementById('type');
+
+    if (navToggle && navLinks) {
+        navToggle.addEventListener('click', () => {
+            const open = navLinks.classList.toggle('is-open');
+            navToggle.classList.toggle('is-open', open);
+            navToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+        });
+
+        navLinks.querySelectorAll('a').forEach((link) => {
+            link.addEventListener('click', () => {
+                navLinks.classList.remove('is-open');
+                navToggle.classList.remove('is-open');
+                navToggle.setAttribute('aria-expanded', 'false');
+            });
+        });
+    }
+
+    document.querySelectorAll('.price-cta[data-project-type]').forEach((cta) => {
+        cta.addEventListener('click', () => {
+            const projectType = cta.getAttribute('data-project-type');
+            if (typeSelect && projectType) {
+                typeSelect.value = projectType;
+            }
+        });
+    });
+
+    if (!form) {
+        return;
+    }
+
+    form.addEventListener('submit', (event) => {
+        const name = form.querySelector('#name');
+        const email = form.querySelector('#email');
+        const details = form.querySelector('#details');
+        const fields = [name, email, details];
+        let valid = true;
+
+        fields.forEach((field) => {
+            if (!field) {
+                return;
+            }
+
+            const empty = !field.value.trim();
+            field.classList.toggle('is-invalid', empty);
+            if (empty) {
+                valid = false;
+            }
+        });
+
+        if (email && email.value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value)) {
+            email.classList.add('is-invalid');
+            valid = false;
+        }
+
+        if (!valid) {
+            event.preventDefault();
+            if (formStatus) {
+                formStatus.className = 'form-status is-error';
+                formStatus.textContent = 'Please complete the required fields.';
+            }
+            return;
+        }
+
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Sending...';
+        }
+
+        if (formStatus) {
+            formStatus.className = 'form-status';
+            formStatus.textContent = 'Sending your project details...';
+        }
+    });
+});
+
