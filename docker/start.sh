@@ -32,6 +32,17 @@ case "${MAIL_HOST}" in
     ;;
 esac
 
+# Render terminates TLS; artisan serve only sees HTTP unless we force HTTPS URLs.
+case "${APP_URL}" in
+  http://*)
+    export APP_URL="https://${APP_URL#http://}"
+    ;;
+esac
+if [ -z "${APP_URL}" ]; then
+  export APP_URL="https://kodigo-labs.onrender.com"
+fi
+export ASSET_URL="${ASSET_URL:-$APP_URL}"
+
 php artisan migrate --force
 php artisan config:cache
 php artisan route:cache

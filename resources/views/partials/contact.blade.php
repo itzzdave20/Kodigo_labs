@@ -60,7 +60,7 @@
                     @enderror
                     
                     <!-- Pricing display area -->
-                    <div id="pricingDisplay" class="pricing-display" style="display: none;">
+                    <div id="pricingDisplay" class="pricing-display" hidden>
                         <div class="pricing-display-header">
                             <span class="pricing-display-icon">💰</span>
                             <strong class="pricing-display-title"></strong>

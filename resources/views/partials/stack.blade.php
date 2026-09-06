@@ -10,8 +10,11 @@
                 <h4>Frontend</h4>
                 <ul>
                     <li>HTML / CSS / JavaScript</li>
+                    <li>TypeScript</li>
                     <li>React</li>
+                    <li>Vue.js</li>
                     <li>Tailwind CSS</li>
+                    <li>Bootstrap</li>
                 </ul>
             </div>
             <div class="stack-group reveal">
@@ -20,12 +23,16 @@
                     <li>Node.js / Express</li>
                     <li>PHP / Laravel</li>
                     <li>Python / Flask</li>
+                    <li>Java</li>
+                    <li>C / C++</li>
                 </ul>
             </div>
             <div class="stack-group reveal">
                 <h4>Database</h4>
                 <ul>
                     <li>MySQL</li>
+                    <li>PostgreSQL</li>
+                    <li>SQLite</li>
                     <li>Firebase</li>
                     <li>MongoDB</li>
                 </ul>
@@ -35,7 +42,9 @@
                 <ul>
                     <li>ESP32 / Arduino</li>
                     <li>Raspberry Pi</li>
+                    <li>C / C++</li>
                     <li>MQTT &amp; sensors</li>
+                    <li>Python (MicroPython)</li>
                 </ul>
             </div>
         </div>

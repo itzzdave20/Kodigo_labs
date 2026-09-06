@@ -1,6 +1,8 @@
 import './bootstrap';
 
 document.addEventListener('DOMContentLoaded', () => {
+    document.documentElement.classList.add('js');
+
     const navToggle = document.getElementById('navToggle');
     const navLinks = document.getElementById('navLinks');
     const navBackdrop = document.getElementById('navBackdrop');
@@ -8,48 +10,110 @@ document.addEventListener('DOMContentLoaded', () => {
     const formStatus = document.getElementById('formStatus');
     const submitBtn = document.getElementById('submitBtn');
     const typeSelect = document.getElementById('type');
+    const header = document.querySelector('header');
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    const setNavOpen = (open) => {
+        if (!navLinks || !navToggle) return;
+        navLinks.classList.toggle('is-open', open);
+        navToggle.classList.toggle('is-open', open);
+        navToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+        if (navBackdrop) {
+            navBackdrop.classList.toggle('is-open', open);
+            navBackdrop.setAttribute('aria-hidden', open ? 'false' : 'true');
+        }
+        document.body.classList.toggle('nav-open', open);
+    };
 
     if (navToggle && navLinks) {
-        const closeNav = () => {
-            navLinks.classList.remove('is-open');
-            navToggle.classList.remove('is-open');
-            navToggle.setAttribute('aria-expanded', 'false');
-            if (navBackdrop) navBackdrop.classList.remove('is-open');
-        };
-
         navToggle.addEventListener('click', () => {
-            const open = navLinks.classList.toggle('is-open');
-            navToggle.classList.toggle('is-open', open);
-            navToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-            if (navBackdrop) navBackdrop.classList.toggle('is-open', open);
+            setNavOpen(!navLinks.classList.contains('is-open'));
         });
 
-        if (navBackdrop) navBackdrop.addEventListener('click', closeNav);
-        navLinks.querySelectorAll('a').forEach((link) => link.addEventListener('click', closeNav));
+        if (navBackdrop) {
+            navBackdrop.addEventListener('click', () => setNavOpen(false));
+        }
+
+        navLinks.querySelectorAll('a').forEach((link) => {
+            link.addEventListener('click', () => setNavOpen(false));
+        });
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') setNavOpen(false);
+        });
     }
 
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    
-    if (!prefersReducedMotion) {
+    if (header) {
+        const updateHeader = () => {
+            header.classList.toggle('is-scrolled', window.scrollY > 8);
+        };
+        window.addEventListener('scroll', updateHeader, { passive: true });
+        updateHeader();
+    }
+
+    const revealElements = document.querySelectorAll('.reveal');
+
+    if (prefersReducedMotion) {
+        revealElements.forEach((el) => el.classList.add('is-visible'));
+    } else {
         const revealObserver = new IntersectionObserver((entries) => {
             entries.forEach((entry) => {
-                if (entry.isIntersecting) {
-                    const delay = entry.target.dataset.revealDelay || 0;
-                    setTimeout(() => entry.target.classList.add('is-visible'), delay);
-                    revealObserver.unobserve(entry.target);
-                }
+                if (!entry.isIntersecting) return;
+                const delay = Number(entry.target.dataset.revealDelay) || 0;
+                window.setTimeout(() => entry.target.classList.add('is-visible'), delay);
+                revealObserver.unobserve(entry.target);
             });
-        }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+        }, { threshold: 0.12, rootMargin: '0px 0px -8% 0px' });
 
-        document.querySelectorAll('.reveal').forEach((element, index) => {
-            const section = element.closest('section');
-            const siblingsInSection = section ? Array.from(section.querySelectorAll('.reveal')) : [element];
-            const indexInSection = siblingsInSection.indexOf(element);
-            element.dataset.revealDelay = indexInSection * 80;
+        revealElements.forEach((element) => {
+            const section = element.closest('section') || element.parentElement;
+            const siblings = section ? Array.from(section.querySelectorAll('.reveal')) : [element];
+            element.dataset.revealDelay = String(Math.max(siblings.indexOf(element), 0) * 90);
             revealObserver.observe(element);
         });
-    } else {
-        document.querySelectorAll('.reveal').forEach((el) => el.classList.add('is-visible'));
+
+        const hero = document.querySelector('.hero.reveal');
+        if (hero) {
+            hero.dataset.revealDelay = '0';
+            requestAnimationFrame(() => hero.classList.add('is-visible'));
+        }
+    }
+
+    const animateCount = (el) => {
+        const target = Number(el.dataset.count);
+        if (!Number.isFinite(target)) return;
+
+        const suffix = el.dataset.suffix ?? '';
+        const duration = 1100;
+
+        if (prefersReducedMotion) {
+            el.textContent = `${target}${suffix}`;
+            return;
+        }
+
+        const start = performance.now();
+        const tick = (now) => {
+            const progress = Math.min((now - start) / duration, 1);
+            const eased = 1 - Math.pow(1 - progress, 3);
+            el.textContent = `${Math.round(target * eased)}${suffix}`;
+            if (progress < 1) requestAnimationFrame(tick);
+        };
+
+        el.textContent = `0${suffix}`;
+        requestAnimationFrame(tick);
+    };
+
+    const countEls = document.querySelectorAll('[data-count]');
+    if (countEls.length) {
+        const countObserver = new IntersectionObserver((entries) => {
+            entries.forEach((entry) => {
+                if (!entry.isIntersecting) return;
+                animateCount(entry.target);
+                countObserver.unobserve(entry.target);
+            });
+        }, { threshold: 0.4 });
+
+        countEls.forEach((el) => countObserver.observe(el));
     }
 
     const pricingData = {
@@ -70,46 +134,59 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    const pricingDisplay = document.getElementById('pricingDisplay');
+    const pricingTitle = pricingDisplay?.querySelector('.pricing-display-title');
+    const pricingAmount = pricingDisplay?.querySelector('.pricing-display-amount');
+    const pricingFeatures = pricingDisplay?.querySelector('.pricing-display-features');
+
+    const renderPricing = (selectedType) => {
+        if (!pricingDisplay) return;
+        const pricing = pricingData[selectedType];
+
+        if (!pricing) {
+            pricingDisplay.hidden = true;
+            return;
+        }
+
+        if (pricingTitle) pricingTitle.textContent = pricing.title;
+        if (pricingAmount) pricingAmount.textContent = pricing.range;
+        if (pricingFeatures) {
+            pricingFeatures.innerHTML = pricing.features.map((item) => `<li>${item}</li>`).join('');
+        }
+
+        pricingDisplay.hidden = false;
+        pricingDisplay.classList.remove('is-animating');
+        void pricingDisplay.offsetWidth;
+        pricingDisplay.classList.add('is-animating');
+    };
+
     document.querySelectorAll('.price-cta[data-project-type]').forEach((cta) => {
         cta.addEventListener('click', () => {
             const projectType = cta.getAttribute('data-project-type');
             if (typeSelect && projectType) {
                 typeSelect.value = projectType;
-                typeSelect.dispatchEvent(new Event('change'));
+                renderPricing(projectType);
             }
         });
     });
 
     if (typeSelect) {
-        const pricingDisplay = document.getElementById('pricingDisplay');
-        const pricingTitle = pricingDisplay?.querySelector('.pricing-display-title');
-        const pricingAmount = pricingDisplay?.querySelector('.pricing-display-amount');
-        const pricingFeatures = pricingDisplay?.querySelector('.pricing-display-features');
-
-        typeSelect.addEventListener('change', (e) => {
-            const selectedType = e.target.value;
-            const pricing = pricingData[selectedType];
-
-            if (pricing && pricingDisplay) {
-                if (pricingTitle) pricingTitle.textContent = pricing.title;
-                if (pricingAmount) pricingAmount.textContent = pricing.range;
-                if (pricingFeatures) {
-                    pricingFeatures.innerHTML = pricing.features.map(f => `<li>${f}</li>`).join('');
-                }
-                pricingDisplay.style.display = 'block';
-            } else if (pricingDisplay) {
-                pricingDisplay.style.display = 'none';
-            }
+        typeSelect.addEventListener('change', (event) => {
+            renderPricing(event.target.value);
         });
 
-        if (typeSelect.value && pricingData[typeSelect.value]) {
-            typeSelect.dispatchEvent(new Event('change'));
+        if (pricingData[typeSelect.value]) {
+            renderPricing(typeSelect.value);
         }
     }
 
-
-
     if (!form) return;
+
+    form.querySelectorAll('input, textarea, select').forEach((field) => {
+        const clearInvalid = () => field.classList.remove('is-invalid');
+        field.addEventListener('input', clearInvalid);
+        field.addEventListener('change', clearInvalid);
+    });
 
     form.addEventListener('submit', (event) => {
         const name = form.querySelector('#name');
@@ -117,6 +194,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const details = form.querySelector('#details');
         const fields = [name, email, details];
         let valid = true;
+        let message = 'Please complete the required fields.';
 
         fields.forEach((field) => {
             if (!field) return;
@@ -130,11 +208,17 @@ document.addEventListener('DOMContentLoaded', () => {
             valid = false;
         }
 
+        if (details && details.value.trim().length > 0 && details.value.trim().length < 12) {
+            details.classList.add('is-invalid');
+            valid = false;
+            message = 'Please add a bit more detail (at least 12 characters).';
+        }
+
         if (!valid) {
             event.preventDefault();
             if (formStatus) {
                 formStatus.className = 'form-status is-error';
-                formStatus.textContent = 'Please complete the required fields.';
+                formStatus.textContent = message;
             }
             return;
         }
@@ -142,6 +226,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (submitBtn) {
             submitBtn.disabled = true;
             submitBtn.classList.add('is-loading');
+            submitBtn.setAttribute('aria-busy', 'true');
             submitBtn.textContent = 'Sending...';
         }
 
