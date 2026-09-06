@@ -31,9 +31,17 @@ class ContactController extends Controller
 
         try {
             Mail::to(config('mail.to.address'))->send(new ContactInquiryMail($inquiry));
+            Log::info('Contact inquiry email sent.', [
+                'inquiry_id' => $inquiry->id,
+                'to' => config('mail.to.address'),
+            ]);
         } catch (Throwable $e) {
+            report($e);
             Log::error('Failed to send contact inquiry email.', [
                 'inquiry_id' => $inquiry->id,
+                'to' => config('mail.to.address'),
+                'mailer' => config('mail.default'),
+                'host' => config('mail.mailers.smtp.host'),
                 'message' => $e->getMessage(),
             ]);
         }

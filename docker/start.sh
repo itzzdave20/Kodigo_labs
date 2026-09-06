@@ -26,6 +26,12 @@ if [ "${DB_CONNECTION}" = "sqlite" ] || [ -z "${DB_CONNECTION}" ]; then
   chmod 664 "${DB_DATABASE}"
 fi
 
+# Gmail shows App Passwords as 4 groups; SMTP needs them with no spaces.
+if [ -n "${MAIL_PASSWORD}" ]; then
+  MAIL_PASSWORD="$(printf '%s' "${MAIL_PASSWORD}" | tr -d '[:space:]')"
+  export MAIL_PASSWORD
+fi
+
 # Use Gmail/SMTP when credentials exist; otherwise keep inquiries in the log.
 if [ -n "${MAIL_USERNAME}" ] && [ -n "${MAIL_PASSWORD}" ]; then
   export MAIL_MAILER="${MAIL_MAILER:-smtp}"
@@ -35,6 +41,7 @@ if [ -n "${MAIL_USERNAME}" ] && [ -n "${MAIL_PASSWORD}" ]; then
   export MAIL_ENCRYPTION="${MAIL_ENCRYPTION:-tls}"
   export MAIL_FROM_ADDRESS="${MAIL_FROM_ADDRESS:-$MAIL_USERNAME}"
   export MAIL_TO_ADDRESS="${MAIL_TO_ADDRESS:-$MAIL_USERNAME}"
+  echo "SMTP enabled: ${MAIL_USERNAME} -> ${MAIL_TO_ADDRESS} via ${MAIL_HOST}:${MAIL_PORT}"
 else
   echo "SMTP credentials missing; using log mailer."
   export MAIL_MAILER=log
