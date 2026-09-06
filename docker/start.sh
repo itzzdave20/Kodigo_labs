@@ -26,11 +26,19 @@ if [ "${DB_CONNECTION}" = "sqlite" ] || [ -z "${DB_CONNECTION}" ]; then
   chmod 664 "${DB_DATABASE}"
 fi
 
-case "${MAIL_HOST}" in
-  ''|smtp.mailpit.dev|127.0.0.1|localhost)
-    export MAIL_MAILER=log
-    ;;
-esac
+# Use Gmail/SMTP when credentials exist; otherwise keep inquiries in the log.
+if [ -n "${MAIL_USERNAME}" ] && [ -n "${MAIL_PASSWORD}" ]; then
+  export MAIL_MAILER="${MAIL_MAILER:-smtp}"
+  export MAIL_HOST="${MAIL_HOST:-smtp.gmail.com}"
+  export MAIL_PORT="${MAIL_PORT:-587}"
+  export MAIL_SCHEME="${MAIL_SCHEME:-smtp}"
+  export MAIL_ENCRYPTION="${MAIL_ENCRYPTION:-tls}"
+  export MAIL_FROM_ADDRESS="${MAIL_FROM_ADDRESS:-$MAIL_USERNAME}"
+  export MAIL_TO_ADDRESS="${MAIL_TO_ADDRESS:-$MAIL_USERNAME}"
+else
+  echo "SMTP credentials missing; using log mailer."
+  export MAIL_MAILER=log
+fi
 
 # Render terminates TLS; artisan serve only sees HTTP unless we force HTTPS URLs.
 case "${APP_URL}" in

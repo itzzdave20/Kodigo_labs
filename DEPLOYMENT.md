@@ -117,17 +117,26 @@ Vercel is great but requires adaptation for Laravel serverless deployment.
 - [ ] Contact form submits successfully
 - [ ] Email notifications work (configure SMTP in production)
 
-✅ **Configure Email**
-Update these environment variables for production emails:
+✅ **Configure Email (Gmail SMTP)**
+Gmail requires an App Password, not your normal login password.
+
+1. Turn on 2-Step Verification: https://myaccount.google.com/signinoptions/two-step-verification
+2. Create an App Password: https://myaccount.google.com/apppasswords
+3. In Render → Environment, set:
+
 ```
 MAIL_MAILER=smtp
-MAIL_HOST=smtp.gmail.com (or your provider)
+MAIL_HOST=smtp.gmail.com
 MAIL_PORT=587
-MAIL_USERNAME=your-email@gmail.com
-MAIL_PASSWORD=your-app-password
+MAIL_USERNAME=kodigolabs.dev@gmail.com
+MAIL_PASSWORD=your-16-character-app-password
 MAIL_ENCRYPTION=tls
-MAIL_FROM_ADDRESS=hello@kodigolabs.com
+MAIL_FROM_ADDRESS=kodigolabs.dev@gmail.com
+MAIL_FROM_NAME=Kodigo Labs
+MAIL_TO_ADDRESS=kodigolabs.dev@gmail.com
 ```
+
+Do **not** commit `MAIL_PASSWORD` to git. Gmail also requires `MAIL_FROM_ADDRESS` to match the Gmail account.
 
 ✅ **Custom Domain (Optional)**
 - Railway: Settings → Domains → Add custom domain

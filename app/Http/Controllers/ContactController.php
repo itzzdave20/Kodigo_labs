@@ -6,8 +6,10 @@ use App\Mail\ContactInquiryMail;
 use App\Models\Inquiry;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\View\View;
+use Throwable;
 
 class ContactController extends Controller
 {
@@ -27,7 +29,14 @@ class ContactController extends Controller
 
         $inquiry = Inquiry::create($validated);
 
-        Mail::to(config('mail.from.address'))->send(new ContactInquiryMail($inquiry));
+        try {
+            Mail::to(config('mail.to.address'))->send(new ContactInquiryMail($inquiry));
+        } catch (Throwable $e) {
+            Log::error('Failed to send contact inquiry email.', [
+                'inquiry_id' => $inquiry->id,
+                'message' => $e->getMessage(),
+            ]);
+        }
 
         return redirect()
             ->route('home', ['#contact'])
